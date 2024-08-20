@@ -3,12 +3,12 @@ import { ref } from 'vue'
 import axios from 'axios'
 
 const api = 'https://todolist-api.hexschool.io'
-const userdata = ref({
-  nickname: '',
-  password: '',
-  email: ''
-})
 const usersignin = ref('')
+const userdata = ref({
+  email: '',
+  password: '',
+  nickname: ''
+})
 
 const signUp = async () => {
   console.log(`${api}/users/sign_up`)
@@ -30,12 +30,12 @@ const signUp = async () => {
     <main>
       <div>
         <h2>註冊</h2>
-        <label for="nickname">帳號: </label>
-        <input type="text" placeholder="user" v-model="userdata.nickname" /><br />
-        <label for="password">密碼: </label>
-        <input type="text" placeholder="password" v-model="userdata.password" /><br />
         <label for="email">信箱: </label>
         <input type="email" placeholder="email" v-model="userdata.email" /><br />
+        <label for="password">密碼: </label>
+        <input type="text" placeholder="password" v-model="userdata.password" /><br />
+        <label for="nickname">匿稱: </label>
+        <input type="text" placeholder="nickname" v-model="userdata.nickname" /><br />
         <button type="button" @click="signUp">註冊</button>
         <p>UID: {{ usersignin }}</p>
         {{ userdata }}
