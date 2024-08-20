@@ -1,14 +1,10 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import axios from 'axios'
 
 const api = 'https://todolist-api.hexschool.io'
 const uid = ref('')
-const token = ref('')
-const cookie = document.cookie.replace(
-  /(?:(?:^|.*;\s*)cookiesSaveToken\s*=\s*([^;]*).*$)|^.*$/,
-  '$1'
-)
+const userToken = ref('')
 
 const userData = ref({
   email: '',
@@ -20,6 +16,12 @@ const signinData = ref({
   password: ''
 })
 
+const signinStatusData = ref({
+  nickname: '',
+  uid: ''
+})
+
+// 註冊
 const signUp = async () => {
   try {
     const res = await axios.post(`${api}/users/sign_up`, userData.value)
@@ -30,17 +32,33 @@ const signUp = async () => {
   }
 }
 
+// 登入
 const signIn = async () => {
   try {
     const res = await axios.post(`${api}/users/sign_in`, signinData.value)
     console.log(res.data)
-    token.value = res.data.token
+    userToken.value = res.data.token
     document.cookie = `cookiesSaveToken = ${res.data.token}`
-    console.log(cookie)
   } catch (error) {
     console.log(error.response.data.message)
   }
 }
+
+// 驗證
+onMounted(async () => {
+  const token = document.cookie.replace(
+    /(?:(?:^|.*;\s*)cookiesSaveToken\s*=\s*([^;]*).*$)|^.*$/,
+    '$1'
+  )
+  console.log('token: ', token)
+  const res = await axios.get(`${api}/users/checkout`, {
+    headers: {
+      Authorization: token
+    }
+  })
+  console.log(res)
+  signinStatusData.value = res.data
+})
 </script>
 
 <template>
@@ -61,6 +79,7 @@ const signIn = async () => {
         <p>UID: {{ uid }}</p>
         {{ userData }}
       </div>
+      <hr />
       <div>
         <h2>登入</h2>
         <label for="email">信箱: </label>
@@ -68,8 +87,17 @@ const signIn = async () => {
         <label for="password">密碼: </label>
         <input type="text" placeholder="password" v-model="signinData.password" /><br />
         <button type="button" @click="signIn">登入</button>
-        <p>token: {{ token }}</p>
+        <p>token: {{ userToken }}</p>
         {{ signinData }}
+      </div>
+      <hr />
+      <div>
+        <h2>驗證</h2>
+        <div v-if="signinStatusData.uid">
+          <p>暱稱: {{ signinStatusData.nickname }}</p>
+          <p>UID: {{ signinStatusData.uid }}</p>
+        </div>
+        <div v-else>目前未登入</div>
       </div>
     </main>
   </div>
