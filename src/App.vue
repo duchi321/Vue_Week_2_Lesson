@@ -4,7 +4,7 @@ import axios from 'axios'
 
 const api = 'https://todolist-api.hexschool.io'
 const uid = ref('')
-const userToken = ref('')
+const displayToken = ref('')
 
 const userData = ref({
   email: '',
@@ -16,10 +16,15 @@ const signinData = ref({
   password: ''
 })
 
-const signinStatusData = ref({
+const signinStatus = ref({
   nickname: '',
   uid: ''
 })
+
+const token = document.cookie.replace(
+  /(?:(?:^|.*;\s*)cookiesSaveToken\s*=\s*([^;]*).*$)|^.*$/,
+  '$1'
+)
 
 // 註冊
 const signUp = async () => {
@@ -34,11 +39,15 @@ const signUp = async () => {
 
 // 登入
 const signIn = async () => {
+  if (signinStatus.value.uid !== '') {
+    alert('已登入')
+    return
+  }
   try {
     const res = await axios.post(`${api}/users/sign_in`, signinData.value)
-    console.log(res.data)
-    userToken.value = res.data.token
+    displayToken.value = res.data.token
     document.cookie = `cookiesSaveToken = ${res.data.token}`
+    location.reload()
   } catch (error) {
     console.log(error.response.data.message)
   }
@@ -46,19 +55,40 @@ const signIn = async () => {
 
 // 驗證
 onMounted(async () => {
-  const token = document.cookie.replace(
-    /(?:(?:^|.*;\s*)cookiesSaveToken\s*=\s*([^;]*).*$)|^.*$/,
-    '$1'
-  )
-  console.log('token: ', token)
-  const res = await axios.get(`${api}/users/checkout`, {
-    headers: {
-      Authorization: token
-    }
-  })
-  console.log(res)
-  signinStatusData.value = res.data
+  try {
+    const res = await axios.get(`${api}/users/checkout`, {
+      headers: {
+        Authorization: token
+      }
+    })
+    signinStatus.value = res.data
+  } catch (error) {
+    console.log(error.response.data.message)
+  }
 })
+
+// 登出
+const signOut = async () => {
+  if (signinStatus.value.uid === '') {
+    alert('未登入')
+    return
+  }
+  try {
+    await axios.post(
+      `${api}/users/sign_out`,
+      {},
+      {
+        headers: {
+          Authorization: token
+        }
+      }
+    )
+    alert('成功登出')
+    location.reload()
+  } catch (error) {
+    alert('登出錯誤: ' + error.message)
+  }
+}
 </script>
 
 <template>
@@ -87,17 +117,22 @@ onMounted(async () => {
         <label for="password">密碼: </label>
         <input type="text" placeholder="password" v-model="signinData.password" /><br />
         <button type="button" @click="signIn">登入</button>
-        <p>token: {{ userToken }}</p>
+        <p>token: {{ displayToken }}</p>
         {{ signinData }}
       </div>
       <hr />
       <div>
         <h2>驗證</h2>
-        <div v-if="signinStatusData.uid">
-          <p>暱稱: {{ signinStatusData.nickname }}</p>
-          <p>UID: {{ signinStatusData.uid }}</p>
+        <div v-if="signinStatus.uid">
+          <p>暱稱: {{ signinStatus.nickname }}</p>
+          <p>UID: {{ signinStatus.uid }}</p>
         </div>
         <div v-else>目前未登入</div>
+      </div>
+      <hr />
+      <h3>登出</h3>
+      <div>
+        <button type="button" @click="signOut">登出</button>
       </div>
     </main>
   </div>
